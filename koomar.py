@@ -1,5 +1,5 @@
-# Koomar is a simple IRC bot written for fun.
-# This is a super basic loop, but works well for small things.
+# koomar is a simple IRC bot written for fun.
+# Grab your updates from: http://github.com/anandkunal/koomar/
 # Peep the IRC RFC: http://www.irchelp.org/irchelp/rfc/rfc.html
 
 import datetime
