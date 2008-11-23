@@ -5,20 +5,24 @@
 import datetime
 import random
 import socket
+import re
 
 server = "irc.freenode.net"
 channel = "whatspop"
 nickname = "koomar"
 port = 6667
 command = "koomar"
+# Used to send admin commands to koomar
+password = "test"
 
 quotes = ["Stop exploding, you cowards!", "Take a dip!"]
 
 class Koomar:
-    def __init__(self, server, channel, nickname, port, command):
+    def __init__(self, server, channel, nickname, password, port, command):
         self.server = server
         self.channel = channel
         self.nickname = nickname
+        self.password = password
         self.port = port
         self.command = command
         self.irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -56,6 +60,17 @@ class Koomar:
                                 if line[4] == "quote":
                                     quote = random.randint(0, len(quotes)-1)
                                     self.send_message("\"%s\"" % (quotes[quote]))
+                                elif line[4] == "disconnect":
+                                    if line[5] == self.password:
+                                        self.disconnect()
+                                        return
+                                    else:
+                                        if not line[2].startswith('#'):
+                                            matches = re.match(':([A-Za-z0-9_-]+)!', line[0])
+                                            sender = matches.groups()[0]
+                                            self.send_private_message("Dear %s, you gave an invalid password." % sender, sender)
+                                        else:
+                                            self.send_message("Invalid password.")
                                 else:
                                     self.send_message("I don't know that command!")
                     except IndexError:
@@ -66,5 +81,9 @@ class Koomar:
     
     def send_message(self, message):
         self.irc.send("PRIVMSG #%s :%s\r\n" % (self.channel, message))
+    def send_private_message(self, message, recipient):
+        msg = "PRIVMSG %s :%s\r\n" % (recipient, message)
+        #print msg
+        self.irc.send(msg)
         
-Koomar(server, channel, nickname, port, command)
+Koomar(server, channel, nickname, password, port, command)
