@@ -6,6 +6,7 @@ import datetime
 import random
 import socket
 import re
+import lib
 
 server = "irc.freenode.net"
 channel = "whatspop"
@@ -100,16 +101,14 @@ class Koomar:
         msg = "PRIVMSG %s :%s\r\n" % (recipient, message)
         #print msg
         self.irc.send(msg)
-    class Lib:
-        """General library with some helper functions. DRY'ness is always good."""
-        def is_private_message(line):
-            line = line.strip().split()
-            if not line[2].startswith('#'): return True
-            return False
         
 koomar = Koomar(server, channel, nickname, password, port, command)
 def test_function(koomar, line):
-    print line
+    #print line
+    if lib.is_public_message(line):
+        print "Public message"
+    if lib.is_private_message(line):
+        print "Private message"
     #koomar.send_message('test_function')
 koomar.add_function(test_function)
 koomar.connect()
