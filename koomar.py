@@ -18,7 +18,8 @@ password = "test"
 quotes = ["Stop exploding, you cowards!", "Take a dip!"]
 
 class Koomar:
-    def __init__(self, server, channel, nickname, password, port, command):
+    def __init__(self, server, channel, nickname, password, port, command, auto_connect = False):
+        """Establish beginning variables and start the socket."""
         self.server = server
         self.channel = channel
         self.nickname = nickname
@@ -26,7 +27,10 @@ class Koomar:
         self.port = port
         self.command = command
         self.irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connect()
+        # List of functions to call when processing a post
+        self.functions = []
+        if auto_connect:
+            self.connect()
 
     def __del__(self):
         self.disconnect()
@@ -40,7 +44,9 @@ class Koomar:
         self.irc.send("JOIN #%s\r\n" % self.channel)
         self.send_message("%s is in the house!" % (self.nickname))
         self.loop()
-        
+    def add_function(self, function):
+        """Add a processing function."""
+        self.functions.append(function)
     def loop(self):
         while 1:
             self.buffer += self.irc.recv(4096)
@@ -48,6 +54,15 @@ class Koomar:
             self.buffer = temp_buffer.pop()
 
             for line in temp_buffer:
+                responses = []
+                # Stubbing out functionality for custom functions. Eventually the big block below will be gone.
+                for function in self.functions:
+                    try:
+                        responses.append(function(self, line))
+                    except IndexError:
+                        # I put this in here just to be safe. (Dirk)
+                        pass
+                # Standard control library
                 line = line.strip().split()
                 if line[0] == "PING":
                     self.irc.send("PONG %s\r\n" % line[1])
@@ -85,5 +100,16 @@ class Koomar:
         msg = "PRIVMSG %s :%s\r\n" % (recipient, message)
         #print msg
         self.irc.send(msg)
+    class Lib:
+        """General library with some helper functions. DRY'ness is always good."""
+        def is_private_message(line):
+            line = line.strip().split()
+            if not line[2].startswith('#'): return True
+            return False
         
-Koomar(server, channel, nickname, password, port, command)
+koomar = Koomar(server, channel, nickname, password, port, command)
+def test_function(koomar, line):
+    print line
+    #koomar.send_message('test_function')
+koomar.add_function(test_function)
+koomar.connect()
