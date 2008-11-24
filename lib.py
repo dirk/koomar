@@ -1,24 +1,12 @@
 import re
 
 """General library with some helper functions. DRY'ness is always good."""
-def is_private_message(line):
-    line = line.strip().split()
-    if not line[2].startswith('#'): return True
-    return False
-def is_public_message(line):
-    return not is_private_message(line)
 def flatten(x):
     """flatten(sequence) -> list
 
     Returns a single, flat list which contains all elements retrieved
     from the sequence and all recursively contained sub-sequences
-    (iterables).
-
-    Examples:
-    >>> [1, 2, [3,4], (5,6)]
-    [1, 2, [3, 4], (5, 6)]
-    >>> flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
-    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
+    (iterables)."""
     result = []
     for el in x:
         #if isinstance(el, (list, tuple)):
@@ -37,7 +25,7 @@ class Message:
         else:
             self.sender = None
         self.target = a[2]
-        self.body = a[3][1:]
+        self.body = a[3][1:].strip()
     def is_public(self):
         if self.target.startswith('#'): return True
         return False
@@ -46,19 +34,22 @@ class Message:
         return False
     # Everything below here is horrendously ugly, but it works.
     def command(self, command):
+        """Get the command that is issued to koomar."""
         if self.is_public() and self.body.startswith(command):
-            return self.body[(command.__len__()+1):].__str__().strip().split(' ')[0].__str__()
+            return self.body[(command.__len__()+1):].split(' ')[0].strip()
         else:
-            return self.body.__str__().strip().split(' ')[0].__str__()
+            return self.body.split(' ')[0].strip()
     def argv(self, command):
+        """Get the arguments (Everything passed after the command)."""
+        # Currently kind of redundant, some cleanup may be necessary.
         if self.is_public() and self.body.startswith(command):
             try:
-                return self.body[(command.__len__()+1):].__str__().strip().split(' ', 1)[1].__str__().strip()
+                return self.body[(command.__len__()+1):].split(' ', 1)[1].strip()
             except IndexError:
                 return False
         else:
             try:
-                return self.body.__str__().strip().split(' ', 1)[1].__str__().strip()
+                return self.body.split(' ', 1)[1].strip()
             except IndexError:
                 return False
         

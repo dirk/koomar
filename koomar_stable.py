@@ -58,31 +58,56 @@ class Koomar:
             self.buffer = temp_buffer.pop()
 
             for line in temp_buffer:
-                # First make sure if its a PING request.
-                parts = line.strip().split()
-                if parts[0] == "PING":
-                    self.irc.send("PONG %s\r\n" % parts[1])
-                    continue
+                responses = []
+                # Stubbing out functionality for custom functions. Eventually the big block below will be gone.
+                for function in flatten(self.functions):
+                    try:
+                        responses.append(function(self, line))
+                    except IndexError:
+                        # I put this in here just to be safe. (Dirk)
+                        pass
+                # Standard control library
                 try:
                     message = Message(line)
                 except IndexError:
                     pass
-                # Now move on to the main functionality.
-                responses = []
-                # Stubbing out functionality for custom functions. Eventually the big block below will be gone.
-                for function in flatten(self.functions):
-                    # Making it very verbose just to be safe.
-                    response = function(self, message)
-                    if not response == False:
-                        responses.append(function)
-                    else:
-                        # If the function returns False, it is telling koomar to kill itself.
-                        self.send_message("%s is disconnecting..." % self.nickname)
-                        self.disconnect()
-                        return
-                # Standard control library
-                if not responses.__contains__(True):
-                    self.send_message("I don't know that command!")                   
+                line = line.strip().split()
+                if line[0] == "PING":
+                    self.irc.send("PONG %s\r\n" % line[1])
+                else:
+                    try:
+                        # Disconnect functionality (revisited)
+                        command = message.command(self.command)
+                        if command.__str__() == 'disconnect':
+                            if not message.argv(self.command) == self.password:
+                                if message.is_public():
+                                    koomar.send_message('Incorrect password.')
+                                else:
+                                    koomar.send_private_message("Dear %s, you gave an invalid password." % message.sender, message.sender)
+                            else:
+                                koomar.send_message('Correct password. Disconnecting...')
+                                self.disconnect()
+                                return
+                        if line[3] == ":%s" % (self.command):
+                            if len(line) <= 4:
+                                self.send_message("Type `%s quote`" % (self.command))
+                            else:
+                                pass
+                                #if line[4] == "disconnect":
+                                #    if line[5] == self.password:
+                                #        self.disconnect()
+                                #        return
+                                #    else:
+                                #        if not line[2].startswith('#'):
+                                #            matches = re.match(':([A-Za-z0-9_-]+)!', line[0])
+                                #            sender = matches.groups()[0]
+                                #            self.send_private_message("Dear %s, you gave an invalid password." % sender, sender)
+                                #        else:
+                                #            self.send_message("Invalid password.")
+                            #if not responses.__contains__(True):
+                                #self.send_message("I don't know that command!")
+                    except IndexError:
+                        pass # Each line may not be a conversation                    
     def disconnect(self):
         self.irc.close()
     def send_message(self, message):
@@ -91,17 +116,8 @@ class Koomar:
         self.irc.send("PRIVMSG %s :%s\r\n" % (recipient, message))
         
 koomar = Koomar(server, channel, nickname, password, port, command)
-def core_parser(koomar, message):
-    command = message.command(koomar.command)
-    if command.__str__() == 'disconnect':
-        if not message.argv(koomar.command) == koomar.password:
-            if message.is_public():
-                koomar.send_message('Incorrect password.')
-            else:
-                koomar.send_private_message("Dear %s, you gave an invalid password." % message.sender, message.sender)
-        else:
-            return False
-def quote_parser(koomar, message):
+def quote_parser(koomar, line):
+    message = Message(line)
     command = message.command(koomar.command)
     if command == 'quote':
         rand = random.randint(0, len(quotes)-1)
@@ -111,7 +127,8 @@ def quote_parser(koomar, message):
         else:
             koomar.send_private_message("\"%s\"" % quote, message.sender)
         return True
-def help_parser(koomar, message):
+def help_parser(koomar, line):
+    message = Message(line)
     command = message.command(koomar.command)
     help = \
 """Koomar is a currently in development IRC bot.
@@ -124,7 +141,7 @@ Type in 'koomar quote' to get a random Futurama quote."""
             for line in help.split('\n'):
                 koomar.send_private_message(line, message.sender)
         return True
-koomar.add_function([core_parser, quote_parser, help_parser])
+koomar.add_function([quote_parser, help_parser])
 koomar.connect()
 
 
