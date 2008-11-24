@@ -2,12 +2,11 @@
 # Grab your updates from: http://github.com/anandkunal/koomar/
 # Peep the IRC RFC: http://www.irchelp.org/irchelp/rfc/rfc.html
 
-import datetime
+#import datetime
 import random
 import socket
-import re
-import time
-from copy import copy
+#import re
+#import time
 
 import lib
 from lib import Message, flatten
@@ -142,6 +141,3 @@ Type in 'koomar quote' to get a random Futurama quote."""
     return False
 koomar.add_function([core_parser, quote_parser, help_parser])
 koomar.connect()
-
-
-
