@@ -7,6 +7,7 @@ import random
 import socket
 import re
 import time
+from copy import copy
 
 import lib
 from lib import Message, flatten
@@ -20,6 +21,7 @@ command = "koomar"
 password = "test"
 
 quotes = ["Stop exploding, you cowards!", "Take a dip!"]
+sender_exceptions = ['NickServ', 'freenode-connect']
 
 class Koomar:
     def __init__(self, server, channel, nickname, password, port, command, auto_connect = False):
@@ -73,16 +75,26 @@ class Koomar:
                 for function in flatten(self.functions):
                     # Making it very verbose just to be safe.
                     response = function(self, message)
-                    if not response == False:
-                        responses.append(function)
-                    else:
+                    if not response == 'disconnect':
+                        responses.append({'function': function, 'response': response})
+                    elif response == 'disconnect':
                         # If the function returns False, it is telling koomar to kill itself.
                         self.send_message("%s is disconnecting..." % self.nickname)
                         self.disconnect()
                         return
-                # Standard control library
-                if not responses.__contains__(True):
-                    self.send_message("I don't know that command!")                   
+                # Checks to see if at least one of the parsers responded with either true or a string.
+                def check(r):
+                    # The old algorithm, I'm keeping it here just for good times' sake.
+                    #(r['response'] == True or (not type(r['response']) == bool and r['response'].isalnum()))
+                    if r == True or type(r) == str: return True
+                    return False
+                if not [check(r['response']) for r in responses].__contains__(True):
+                    # and...
+                    if message.is_command(self.command, sender_exceptions):
+                        if message.is_public():
+                            self.send_message("I don't know that command!")
+                        else:
+                            self.send_private_message("I don't know that command!", message.sender)
     def disconnect(self):
         self.irc.close()
     def send_message(self, message):
@@ -99,8 +111,10 @@ def core_parser(koomar, message):
                 koomar.send_message('Incorrect password.')
             else:
                 koomar.send_private_message("Dear %s, you gave an invalid password." % message.sender, message.sender)
+            return True
         else:
-            return False
+            return 'disconnect'
+    return False
 def quote_parser(koomar, message):
     command = message.command(koomar.command)
     if command == 'quote':
@@ -111,6 +125,7 @@ def quote_parser(koomar, message):
         else:
             koomar.send_private_message("\"%s\"" % quote, message.sender)
         return True
+    return False
 def help_parser(koomar, message):
     command = message.command(koomar.command)
     help = \
@@ -124,6 +139,7 @@ Type in 'koomar quote' to get a random Futurama quote."""
             for line in help.split('\n'):
                 koomar.send_private_message(line, message.sender)
         return True
+    return False
 koomar.add_function([core_parser, quote_parser, help_parser])
 koomar.connect()
 

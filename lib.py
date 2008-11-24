@@ -32,13 +32,22 @@ class Message:
     def is_private(self):
         if not self.is_public(): return True
         return False
+    def is_command(self, command, exceptions):
+        if self.is_public() and self.body.startswith(command):
+            return True
+        elif self.is_private() and not (self.sender == None or exceptions.__contains__(self.sender)):
+            return True
+        else:
+            return False
     # Everything below here is horrendously ugly, but it works.
     def command(self, command):
         """Get the command that is issued to koomar."""
         if self.is_public() and self.body.startswith(command):
             return self.body[(command.__len__()+1):].split(' ')[0].strip()
-        else:
+        elif self.is_private():
             return self.body.split(' ')[0].strip()
+        else:
+            return False
     def argv(self, command):
         """Get the arguments (Everything passed after the command)."""
         # Currently kind of redundant, some cleanup may be necessary.
@@ -47,9 +56,11 @@ class Message:
                 return self.body[(command.__len__()+1):].split(' ', 1)[1].strip()
             except IndexError:
                 return False
-        else:
+        elif self.is_private():
             try:
                 return self.body.split(' ', 1)[1].strip()
             except IndexError:
                 return False
+        else:
+            return False
         
