@@ -12,6 +12,6 @@ The canonical example is an IRC bot that blurts out random quotations on command
 
 h3. THINGS YOU CAN DO: (via Anand)
 
-1. Display Git commits
-2. Display the current song/mood
-3. Display feed information
+# Display Git commits
+# Display the current song/mood
+# Display feed information
