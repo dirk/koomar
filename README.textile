@@ -1,16 +1,16 @@
-h3. General Information
+h2. General Information
 
 koomar is a simple IRC bot written for fun.
 It's just a super basic loop, but works well for small things.
 Yes, the name comes from Harold & Kumar.
 
-h4. Installation
+h3. Installation
 
 *Just run it!*
 koomar depends on the Python standard library - no plugins required.
 The canonical example is an IRC bot that blurts out random quotations on command.
 
-h4. THINGS YOU CAN DO: (via Anand)
+h3. THINGS YOU CAN DO: (via Anand)
 
 1. Display Git commits
 2. Display current song/mood
